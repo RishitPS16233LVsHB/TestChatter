@@ -51,23 +51,38 @@ namespace NotWhatsapp
             YourPort = txtYourPort;
             ClientIPAndPort = txtClientIPAndPort;
             ServerIpAndPort = txtServerIpAndPort;
+
+
+            SetMyIP();
+        }
+
+        private void SetMyIP()
+        {
+            try
+            {
+                string hostName = Dns.GetHostName();
+                IPAddress[] ipAddresses = Dns.GetHostAddresses(hostName);
+                MyIP = ipAddresses.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
+
+                // for listening incoming connection
+                ConnectionListenerThread = new Thread(() => ListenConnection());
+                // for listening incoming message
+                MessageListenerThread = new Thread(() => ListenMessage());
+                txtYourPort.Text = "1000";
+                client = new TcpClient();
+            }
+            catch (Exception error) { }
         }
 
 
         private static void InitApp(int port_number)
         {
-            string hostName = Dns.GetHostName();
-            // Get the IP addresses associated with the host name
-            IPAddress[] ipAddresses = Dns.GetHostAddresses(hostName);
-            MyIP = ipAddresses.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
-
-
             listener = new TcpListener(MyIP, port_number);
             client = new TcpClient();
             isRunning = true;
 
-            ConnectionListenerThread = new Thread(new ThreadStart(ListenConnection));
-            MessageListenerThread = new Thread(new ThreadStart(ListenMessage));
+            ConnectionListenerThread = new Thread(() => ListenConnection());
+            MessageListenerThread = new Thread(() => ListenMessage());
 
             ConnectionListenerThread.Start();
             MessageListenerThread.Start();
@@ -87,15 +102,18 @@ namespace NotWhatsapp
                 {
                     if (client != null)
                     {
-                        
-                        byte[] b = new byte[2048];
-                        client.GetStream().Read(b, 0, 2048);
-                        LogMessageToMessages("user:-",Encoding.Default.GetString(b).TrimStart().TrimEnd());
+                        if (client.Connected)
+                        {
+                            if (client.Client.Available > 0)
+                            {
+                                byte[] b = new byte[2048];
+                                client.GetStream().Read(b, 0, 2048);
+                                LogMessageToMessages("user:-", Encoding.Default.GetString(b).TrimStart().TrimEnd());
+                            }
+                        }
                     }
                     else
-                    {
-                        MessageBox.Show("no sender ");
-                    }
+                        MessageBox.Show("no sender");
                 }
                 catch (Exception error) { }
             }
@@ -105,14 +123,20 @@ namespace NotWhatsapp
         {
             try
             {
-                if (Message.InvokeRequired)
-                    Messages.Invoke(new Action<string>(AddToMessages), "( " + Sender + " ) - [ " + DateTime.Now.ToString() + " ] --> " + message);
-                else
-                    Messages.Items.Add("( " + Sender + " ) - [ " + DateTime.Now.ToString() + " ] --> " + message);
+                message = message.Trim();
+                if (message != "")
+                {
+                    if (Message.InvokeRequired)
+                        Messages.Invoke(new Action<string>(AddToMessages), "( " + Sender + " ) - [ " + DateTime.Now.ToString() + " ] --> " + message);
+                    else
+                        Messages.Items.Add("( " + Sender + " ) - [ " + DateTime.Now.ToString() + " ] --> " + message);
+                }
             }
             catch (Exception error)
             {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
+                client.Close();
+                client.Dispose();
+                client = new TcpClient();
             }
         }
 
@@ -123,6 +147,8 @@ namespace NotWhatsapp
 
         private static void ListenConnection()
         {
+            TcpClient tempClient = null;
+
             listener.Start();
             MessageBox.Show("listening started");
             LogMessageToMessages("me", "listening started");
@@ -130,9 +156,23 @@ namespace NotWhatsapp
             {
                 try
                 {
-                    client = listener.AcceptTcpClient();
-                    MessageBox.Show(" connected to a machine ");
-                    LogMessageToMessages("me", "connected to a machine");
+                    tempClient = listener.AcceptTcpClient();
+                    if (tempClient != null)
+                    {
+                        DialogResult result = MessageBox.Show("a machine wants to connect to you, do you want connect with it?","connection request",MessageBoxButtons.YesNo,MessageBoxIcon.Information);
+                        if (result == DialogResult.Yes)
+                        {
+                            client = tempClient;
+                            MessageBox.Show(" connected to a machine ");
+                            LogMessageToMessages("me", "connected to a machine");                            
+                        }
+                        else
+                        { 
+                            tempClient.Close();
+                            tempClient.Dispose();
+                        }
+                    }
+
                 }
                 catch (Exception error) { Console.WriteLine(error.Message); }
             }
@@ -149,33 +189,42 @@ namespace NotWhatsapp
             try
             {
                 string clientIP = ClientIPAndPort.Text;
-                MessageBox.Show(clientIP);
+                //MessageBox.Show(clientIP);
                 string[] ip_addressAndPort = clientIP.Split(':');
-                MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
+                //MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
                 client.Connect(ip_addressAndPort[0], Convert.ToInt32(ip_addressAndPort[1]));
-                MessageBox.Show("connected to:- " + clientIP);
-                LogMessageToMessages("me", "connected to:- " + clientIP);
+
+                if (client.Connected)
+                {
+                    MessageBox.Show("connected to:- " + clientIP);
+                    LogMessageToMessages("me", "connected to:- " + clientIP);
+                }
+                else 
+                {
+                    MessageBox.Show("client refused to connect:- " + clientIP);
+                    LogMessageToMessages("me", "client refused to connect:- " + clientIP);
+                }
             }
             catch (Exception error)
             {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
-            }        
+                MessageBox.Show("unable to connect to the client,please enter client ip and port number in this manner CLIENT_IP:PORT_NUMBER for ex:- 10.2.18.50:1000", "Connection error!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                ClientIPAndPort.Clear();
+            }
         }
-
-
 
         private static void ConnectToServer()
         {
             try
             {
-
                 string clientIP = ServerIpAndPort.Text;
-                MessageBox.Show(clientIP);
                 string[] ip_addressAndPort = clientIP.Split(':');
-                MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
                 client.Connect(ip_addressAndPort[0], Convert.ToInt32(ip_addressAndPort[1]));
-                MessageBox.Show("connected to:- server");
                 LogMessageToMessages("me", "connected to:- server");
+
+                //MessageBox.Show(clientIP);
+                //MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
+                //MessageBox.Show("connected to:- server");
+                
                 Message ack = new Message()
                 {
                     type_of_message = "ack",
@@ -186,30 +235,59 @@ namespace NotWhatsapp
                 };
 
                 string json_string = JsonSerializer.Serialize(ack);
-                MessageBox.Show(json_string);
+
+                //MessageBox.Show(json_string);
+                
                 client.GetStream().Write(Encoding.Default.GetBytes("(" + json_string + ") " + Message.Text), 0, Encoding.Default.GetBytes("(" + json_string + ") " + Message.Text).Length);
                 client.GetStream().Flush();
+                
                 LogMessageToMessages("me", "ack " + json_string);
             }
             catch (Exception error)
             {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
+                MessageBox.Show("unable to connect to the server,please enter server ip and port number in this manner SERVER_IP:PORT_NUMBER for ex:- 10.2.18.50:1000","Connection error!",MessageBoxButtons.OK,MessageBoxIcon.Exclamation);
+                ServerIpAndPort.Clear();
             }
         }
 
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
-            ConnectToClient();
-            
+            if (client.Connected)
+            {
+                DialogResult result = MessageBox.Show($"you are currently connected to a client, are you sure want to connect {ClientIPAndPort.Text}?", "warning!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
+                {
+                    client.Close();
+                    client.Dispose();
+                    client = new TcpClient();
+                    ConnectToClient();
+                    isConnectedToServer = false;
+
+
+                    if (MessageListenerThread.ThreadState != ThreadState.Running)
+                        MessageListenerThread.Start();
+                }
+            }
+            else
+            {
+                ConnectToClient();
+                isConnectedToServer = false;
+
+                if (MessageListenerThread.ThreadState != ThreadState.Running)
+                    MessageListenerThread.Start();
+            }
         }
 
         private void btnSend_Click(object sender, EventArgs e)
         {
             try
             {
-                if (client != null && Message.Text != "")
+                if (client != null)
                 {
+                    if (Message.Text == "")
+                        return;
+
                     string message = "(" + ClientIPAndPort.Text + ") " + Message.Text;
                     Message m = new Message()
                     {
@@ -229,11 +307,11 @@ namespace NotWhatsapp
                         Message.Clear();
                 }
                 else
-                    MessageBox.Show("no reciever");
+                    MessageBox.Show("No reciever!", "Reciever error!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
             catch (Exception error)
             {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
+                MessageBox.Show(" No Connection!", "Connection error!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -241,46 +319,61 @@ namespace NotWhatsapp
         {
             try
             {
-                if (ConnectionListenerThread != null)
-                    ConnectionListenerThread.Abort();
                 if (MessageListenerThread != null)
                     MessageListenerThread.Abort();
+
+
+                if (client != null)
+                {
+                    client.Close();
+                    client.Dispose();
+                }
+
+                if(listener != null)
+                    listener.Stop();
+
+                if (ConnectionListenerThread != null)
+                    ConnectionListenerThread.Abort();
+
+                if (listener != null)
+                    listener = null;
+
             }
-            catch (Exception error)
-            {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
-            }
+            catch (Exception error) { }
+
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            try
-            {
-                if(listener != null)
-                    listener.Stop();
-                if(client != null)
-                    client.Close();
-                if(ConnectionListenerThread != null)
-                    ConnectionListenerThread.Abort();
-                
-            }
-            catch (Exception error)
-            {
-                MessageBox.Show(error.Message + "\n\n" + error.StackTrace);
-            }
-            try
-            {
-                if(MessageListenerThread != null)
-                    MessageListenerThread.Abort();
-            }
-            catch (Exception error1) { }
+           CloseThreads();
         }
 
         private void btnConnectToServer_Click(object sender, EventArgs e)
         {
-            ConnectToServer();
-            isConnectedToServer = true;
+            if (client.Connected)
+            {
+                DialogResult result = MessageBox.Show($"you are currently connected to a client, are you sure want to connect to this server {ClientIPAndPort.Text}?", "warning!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
+                {
+                    client.Close();
+                    client.Dispose();
+                    client = new TcpClient();
+                    ConnectToServer();
+                    isConnectedToServer = true;
 
+
+                    if (MessageListenerThread.ThreadState != ThreadState.Running)
+                        MessageListenerThread.Start();
+                }
+            }
+            else
+            {
+                ConnectToServer();
+                isConnectedToServer=true;
+
+                if (MessageListenerThread.ThreadState != ThreadState.Running)
+                    MessageListenerThread.Start();
+            }
         }
     }
     public class Message

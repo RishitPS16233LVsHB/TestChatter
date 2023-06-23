@@ -25,14 +25,13 @@ namespace NotWhatsappServer
         private static TcpClient client;
 
         private static Thread ConnectionListenerThread;
-        private static Thread MessageListenerThread;
 
         private static Dictionary<string,TcpClient> Clients;
 
         private static ListBox ServerMessages;
 
-        private static CancellationToken ConnectionListenerCancelationToken;
-        private static CancellationTokenSource ConnectionListenerCancelationTokenSource;
+
+        private static List<Thread> ClientsMessageListenerThread;
 
         private static int ClientCounter = 0;
 
@@ -55,17 +54,13 @@ namespace NotWhatsappServer
             txtIP.Text = MyIP.ToString();
             txtPort.Text = MyPort + "";
 
-            ConnectionListenerCancelationTokenSource = new CancellationTokenSource();
-            ConnectionListenerCancelationToken = ConnectionListenerCancelationTokenSource.Token;
-
+            ClientsMessageListenerThread = new List<Thread>();
 
             listener = new TcpListener(MyIP,MyPort);
-            ConnectionListenerThread = new Thread(() => ListenConnection(ConnectionListenerCancelationToken));
-            MessageListenerThread = new Thread(() => ListenMessages(ConnectionListenerCancelationToken));
+            ConnectionListenerThread = new Thread(() => ListenConnection());
 
             ServerMessages = lsServerMessages;
             ConnectionListenerThread.Start();
-            MessageListenerThread.Start();
         }
 
 
@@ -92,6 +87,8 @@ namespace NotWhatsappServer
                     {
                         ServerMessages.Items.Add("(" + m.SenderIP + ")[" + DateTime.Now.ToString() + "] " + m.content + " (to)--> " + m.RecieverIP);
                     }));
+
+                    
 
                     string IpAddress = m.RecieverIP.Split(':')[0];
                     TcpClient tcpClient = Clients[IpAddress];
@@ -125,17 +122,17 @@ namespace NotWhatsappServer
             }
 
         }
-        private static void ListenMessages(CancellationToken cancellationToken)
+        private static void ListenMessages(TcpClient MyClient)
         {
             try
             {
 
-                while (!cancellationToken.IsCancellationRequested)
+                while (true)
                 {
-                    if (client != null)
+                    if (MyClient != null)
                     {
                         byte[] byteMessage = new byte[4096];
-                        int bytes_read = client.GetStream().Read(byteMessage, 0, 4096);
+                        int bytes_read = MyClient.GetStream().Read(byteMessage, 0, 4096);
                         if (bytes_read > 0)
                             LogToServerMessages(Encoding.Default.GetString(byteMessage));                        
                     }
@@ -148,23 +145,30 @@ namespace NotWhatsappServer
         }
 
 
-        private static void ListenConnection(CancellationToken cancellationToken)
+        private static void ListenConnection()
         {
             try
             {
                 listener.Start();
                 LogServerMessage("started Listening ");
-                MessageBox.Show("started Listening ");
-                while (!cancellationToken.IsCancellationRequested)
+                while (true)
                 {
                     if (listener.Pending())
                     {
                         byte[] messageBytes = new byte[4096];
                         client = listener.AcceptTcpClient();
+
                         client.GetStream().Read(messageBytes, 0, 4096);
                         Message m = LogToServerMessages(Encoding.Default.GetString(messageBytes));
+                        
+                        ClientCounter++;
+                        Clients.Add(m.SenderIP+"-"+ClientCounter,client);
 
-                        Clients.Add(m.SenderIP,client);
+
+                        //individual thread creation for each instance of not whatsapp application
+                        Thread tempThread = new Thread(() => ListenMessages(client));
+                        ClientsMessageListenerThread.Add(tempThread);
+                        tempThread.Start();
 
                         LogServerMessage("connected");
                         LogServerMessage(Clients.Count + "");
@@ -182,13 +186,13 @@ namespace NotWhatsappServer
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            //ConnectionListenerCancelationTokenSource.Cancel();
-            //ConnectionListenerThread.Join();
             try
             {
+                //MessageListenerThread.Abort();
                 foreach (KeyValuePair<string, TcpClient> i in Clients)
                     i.Value.Close();
                 Clients.Clear();
+
                 listener.Stop();
                 LogServerMessage("Stopped Listening");
                 ConnectionListenerThread.Abort();
@@ -196,7 +200,6 @@ namespace NotWhatsappServer
             catch (Exception error) { }
             try
             {
-                MessageListenerThread.Abort();
             }
             catch (Exception error) { }
         }
@@ -205,9 +208,15 @@ namespace NotWhatsappServer
         {
             try
             {
+                foreach (Thread t in ClientsMessageListenerThread)
+                    t.Abort();
+
                 foreach (KeyValuePair<string, TcpClient> i in Clients)
                     i.Value.Close();
+
+                ClientsMessageListenerThread.Clear();
                 Clients.Clear();
+
                 listener.Stop();
                 LogServerMessage("Stopped Listening");
                 ConnectionListenerThread.Abort();
@@ -215,9 +224,14 @@ namespace NotWhatsappServer
             catch (Exception error) { }
             try
             {
-                MessageListenerThread.Abort();
+                //MessageListenerThread.Abort();
             }
             catch (Exception error) { }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
     public class Message
