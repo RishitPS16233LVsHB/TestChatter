@@ -110,6 +110,11 @@ namespace NotWhatsapp
                                 client.GetStream().Read(b, 0, 2048);
                                 LogMessageToMessages("user:-", Encoding.Default.GetString(b).TrimStart().TrimEnd());
                             }
+                            if (client.Client.Available == 0 && client.Client.Poll(0, SelectMode.SelectRead))
+                            {
+                                client.Close();
+                                LogMessageToMessages("me", "client/Server has disconnected");
+                            }
                         }
                     }
                     else
