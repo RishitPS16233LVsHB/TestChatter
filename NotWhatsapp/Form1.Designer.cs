@@ -45,15 +45,15 @@
             // 
             // txtYourPort
             // 
-            this.txtYourPort.Location = new System.Drawing.Point(72, 19);
+            this.txtYourPort.Location = new System.Drawing.Point(72, 33);
             this.txtYourPort.Name = "txtYourPort";
-            this.txtYourPort.Size = new System.Drawing.Size(115, 20);
+            this.txtYourPort.Size = new System.Drawing.Size(160, 20);
             this.txtYourPort.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(18, 23);
+            this.label1.Location = new System.Drawing.Point(18, 36);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(48, 13);
             this.label1.TabIndex = 1;
@@ -61,9 +61,9 @@
             // 
             // btnListen
             // 
-            this.btnListen.Location = new System.Drawing.Point(193, 17);
+            this.btnListen.Location = new System.Drawing.Point(238, 12);
             this.btnListen.Name = "btnListen";
-            this.btnListen.Size = new System.Drawing.Size(75, 23);
+            this.btnListen.Size = new System.Drawing.Size(75, 53);
             this.btnListen.TabIndex = 7;
             this.btnListen.Text = "Start App Listening";
             this.btnListen.UseVisualStyleBackColor = true;
@@ -72,7 +72,7 @@
             // lsClients
             // 
             this.lsClients.FormattingEnabled = true;
-            this.lsClients.Location = new System.Drawing.Point(16, 45);
+            this.lsClients.Location = new System.Drawing.Point(16, 71);
             this.lsClients.Name = "lsClients";
             this.lsClients.Size = new System.Drawing.Size(297, 537);
             this.lsClients.TabIndex = 8;
@@ -80,26 +80,26 @@
             // lsMessages
             // 
             this.lsMessages.FormattingEnabled = true;
-            this.lsMessages.Location = new System.Drawing.Point(319, 45);
+            this.lsMessages.Location = new System.Drawing.Point(319, 74);
             this.lsMessages.Name = "lsMessages";
-            this.lsMessages.Size = new System.Drawing.Size(1087, 433);
+            this.lsMessages.Size = new System.Drawing.Size(617, 420);
             this.lsMessages.TabIndex = 9;
             // 
             // txtMessage
             // 
-            this.txtMessage.Location = new System.Drawing.Point(319, 484);
+            this.txtMessage.Location = new System.Drawing.Point(319, 500);
             this.txtMessage.Multiline = true;
             this.txtMessage.Name = "txtMessage";
-            this.txtMessage.Size = new System.Drawing.Size(1087, 47);
+            this.txtMessage.Size = new System.Drawing.Size(617, 47);
             this.txtMessage.TabIndex = 10;
             // 
             // btnSend
             // 
             this.btnSend.BackColor = System.Drawing.Color.Lime;
             this.btnSend.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.btnSend.Location = new System.Drawing.Point(319, 537);
+            this.btnSend.Location = new System.Drawing.Point(319, 553);
             this.btnSend.Name = "btnSend";
-            this.btnSend.Size = new System.Drawing.Size(119, 45);
+            this.btnSend.Size = new System.Drawing.Size(617, 50);
             this.btnSend.TabIndex = 11;
             this.btnSend.Text = "Send";
             this.btnSend.UseVisualStyleBackColor = false;
@@ -107,9 +107,9 @@
             // 
             // btnConnectToServer
             // 
-            this.btnConnectToServer.Location = new System.Drawing.Point(688, 18);
+            this.btnConnectToServer.Location = new System.Drawing.Point(627, 38);
             this.btnConnectToServer.Name = "btnConnectToServer";
-            this.btnConnectToServer.Size = new System.Drawing.Size(172, 23);
+            this.btnConnectToServer.Size = new System.Drawing.Size(309, 30);
             this.btnConnectToServer.TabIndex = 12;
             this.btnConnectToServer.Text = "Connect To this Server";
             this.btnConnectToServer.UseVisualStyleBackColor = true;
@@ -117,7 +117,7 @@
             // 
             // txtClientIPAndPort
             // 
-            this.txtClientIPAndPort.Location = new System.Drawing.Point(610, 547);
+            this.txtClientIPAndPort.Location = new System.Drawing.Point(478, 12);
             this.txtClientIPAndPort.Name = "txtClientIPAndPort";
             this.txtClientIPAndPort.Size = new System.Drawing.Size(125, 20);
             this.txtClientIPAndPort.TabIndex = 4;
@@ -125,7 +125,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(467, 550);
+            this.label3.Location = new System.Drawing.Point(335, 15);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(143, 13);
             this.label3.TabIndex = 5;
@@ -133,9 +133,9 @@
             // 
             // btnConnect
             // 
-            this.btnConnect.Location = new System.Drawing.Point(741, 537);
+            this.btnConnect.Location = new System.Drawing.Point(338, 38);
             this.btnConnect.Name = "btnConnect";
-            this.btnConnect.Size = new System.Drawing.Size(119, 39);
+            this.btnConnect.Size = new System.Drawing.Size(265, 30);
             this.btnConnect.TabIndex = 6;
             this.btnConnect.Text = "Connect To A Friend";
             this.btnConnect.UseVisualStyleBackColor = true;
@@ -144,7 +144,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(274, 23);
+            this.label2.Location = new System.Drawing.Point(624, 15);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(179, 13);
             this.label2.TabIndex = 14;
@@ -152,16 +152,16 @@
             // 
             // txtServerIpAndPort
             // 
-            this.txtServerIpAndPort.Location = new System.Drawing.Point(459, 21);
+            this.txtServerIpAndPort.Location = new System.Drawing.Point(809, 12);
             this.txtServerIpAndPort.Name = "txtServerIpAndPort";
-            this.txtServerIpAndPort.Size = new System.Drawing.Size(223, 20);
+            this.txtServerIpAndPort.Size = new System.Drawing.Size(127, 20);
             this.txtServerIpAndPort.TabIndex = 13;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1418, 594);
+            this.ClientSize = new System.Drawing.Size(946, 615);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.txtServerIpAndPort);
             this.Controls.Add(this.btnConnectToServer);

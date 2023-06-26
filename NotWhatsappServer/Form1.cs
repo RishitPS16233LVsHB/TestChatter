@@ -31,7 +31,7 @@ namespace NotWhatsappServer
         private static ListBox ServerMessages;
 
 
-        private static List<Thread> ClientsMessageListenerThread;
+        private static Dictionary<string,Thread> ClientsMessageListenerThread;
 
         private static int ClientCounter = 0;
 
@@ -54,7 +54,7 @@ namespace NotWhatsappServer
             txtIP.Text = MyIP.ToString();
             txtPort.Text = MyPort + "";
 
-            ClientsMessageListenerThread = new List<Thread>();
+            ClientsMessageListenerThread = new Dictionary<string, Thread>();
 
             listener = new TcpListener(MyIP,MyPort);
             ConnectionListenerThread = new Thread(() => ListenConnection());
@@ -134,7 +134,7 @@ namespace NotWhatsappServer
                         byte[] byteMessage = new byte[4096];
                         int bytes_read = MyClient.GetStream().Read(byteMessage, 0, 4096);
                         if (bytes_read > 0)
-                            LogToServerMessages(Encoding.Default.GetString(byteMessage));                        
+                            LogToServerMessages(Encoding.Default.GetString(byteMessage));
                     }
                 }
             }
@@ -167,7 +167,7 @@ namespace NotWhatsappServer
 
                         //individual thread creation for each instance of not whatsapp application
                         Thread tempThread = new Thread(() => ListenMessages(client));
-                        ClientsMessageListenerThread.Add(tempThread);
+                        ClientsMessageListenerThread.Add(m.SenderIP + "-" + ClientCounter, tempThread);
                         tempThread.Start();
 
                         LogServerMessage("connected");
@@ -208,8 +208,8 @@ namespace NotWhatsappServer
         {
             try
             {
-                foreach (Thread t in ClientsMessageListenerThread)
-                    t.Abort();
+                foreach (KeyValuePair<string,Thread> t in ClientsMessageListenerThread)
+                    t.Value.Abort();
 
                 foreach (KeyValuePair<string, TcpClient> i in Clients)
                     i.Value.Close();
@@ -229,10 +229,57 @@ namespace NotWhatsappServer
             catch (Exception error) { }
         }
 
+
+        public static void CheckAllConnections()
+        {
+            try
+            {
+                List<string> disconnectedClients = new List<string>();
+
+                if (Clients != null)
+                {
+                    foreach (KeyValuePair<string, TcpClient> i in Clients)
+                    {
+                        if (i.Value.Client.Poll(0, SelectMode.SelectRead) && i.Value.Available == 0)
+                        {
+                            LogServerMessage(i.Key + " is not connected now");
+                            i.Value.Close();
+                            disconnectedClients.Add(i.Key);
+                            ClientsMessageListenerThread[i.Key].Abort();
+                            ClientsMessageListenerThread.Remove(i.Key);
+                            LogServerMessage(i.Key + " is not in session anymore");
+                        }
+                    }
+
+                    // Remove disconnected clients outside the loop
+                    foreach (string key in disconnectedClients)
+                    {
+                        Clients.Remove(key);
+                    }
+                }
+            }
+            catch (Exception error)
+            {
+                LogServerMessage(error.Message);
+            }
+        }
+
+
+
+
+
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            timer1.Interval = 5000;
+            timer1.Tick += Timer1_Tick;
+            timer1.Start();
         }
+
+        private void Timer1_Tick(object sender, EventArgs e)
+        {
+            CheckAllConnections();
+        }
+
     }
     public class Message
     {
