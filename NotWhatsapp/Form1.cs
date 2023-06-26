@@ -86,8 +86,6 @@ namespace NotWhatsapp
 
             ConnectionListenerThread.Start();
             MessageListenerThread.Start();
-
-            MessageBox.Show("started listening for machine ip :- " +MyIP.ToString()+ " on :- " + port_number);
             LogMessageToMessages("me","started listening for machine ip :- " + MyIP.ToString() + " on :- " + port_number);
         }
 
@@ -120,7 +118,10 @@ namespace NotWhatsapp
                     else
                         MessageBox.Show("no sender");
                 }
-                catch (Exception error) { }
+                catch (Exception error) {
+                    client.Dispose();
+                    client = new TcpClient();
+                }
             }
         }
 
@@ -155,7 +156,6 @@ namespace NotWhatsapp
             TcpClient tempClient = null;
 
             listener.Start();
-            MessageBox.Show("listening started");
             LogMessageToMessages("me", "listening started");
             while (true)
             {
@@ -168,13 +168,11 @@ namespace NotWhatsapp
                         if (result == DialogResult.Yes)
                         {
                             client = tempClient;
-                            MessageBox.Show(" connected to a machine ");
                             LogMessageToMessages("me", "connected to a machine");                            
                         }
                         else
                         { 
                             tempClient.Close();
-                            tempClient.Dispose();
                         }
                     }
 
@@ -194,21 +192,11 @@ namespace NotWhatsapp
             try
             {
                 string clientIP = ClientIPAndPort.Text;
-                //MessageBox.Show(clientIP);
                 string[] ip_addressAndPort = clientIP.Split(':');
-                //MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
                 client.Connect(ip_addressAndPort[0], Convert.ToInt32(ip_addressAndPort[1]));
 
                 if (client.Connected)
-                {
-                    MessageBox.Show("connected to:- " + clientIP);
                     LogMessageToMessages("me", "connected to:- " + clientIP);
-                }
-                else 
-                {
-                    MessageBox.Show("client refused to connect:- " + clientIP);
-                    LogMessageToMessages("me", "client refused to connect:- " + clientIP);
-                }
             }
             catch (Exception error)
             {
@@ -225,10 +213,6 @@ namespace NotWhatsapp
                 string[] ip_addressAndPort = clientIP.Split(':');
                 client.Connect(ip_addressAndPort[0], Convert.ToInt32(ip_addressAndPort[1]));
                 LogMessageToMessages("me", "connected to:- server");
-
-                //MessageBox.Show(clientIP);
-                //MessageBox.Show(ip_addressAndPort[0] + "\n" + ip_addressAndPort[1]);
-                //MessageBox.Show("connected to:- server");
                 
                 Message ack = new Message()
                 {
@@ -241,7 +225,6 @@ namespace NotWhatsapp
 
                 string json_string = JsonSerializer.Serialize(ack);
 
-                //MessageBox.Show(json_string);
                 
                 client.GetStream().Write(Encoding.Default.GetBytes("(" + json_string + ") " + Message.Text), 0, Encoding.Default.GetBytes("(" + json_string + ") " + Message.Text).Length);
                 client.GetStream().Flush();
